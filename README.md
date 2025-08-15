@@ -48,7 +48,7 @@ It allows you to:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/local-llm-dashboard.git
+   git clone https://github.com/habi-babti/Local-LLM-Management-Dashboard.git
    cd local-llm-dashboard
    ```
 
@@ -76,9 +76,9 @@ It allows you to:
 
 2. **Run the Streamlit app**
    ```bash
-   streamlit run app.py
+   streamlit run Dashboard.py
    ```
-   *(Replace `app.py` with your actual filename.)*
+  
 
 3. **Access in browser**
    Open [http://localhost:8501](http://localhost:8501) in your browser.

@@ -11,7 +11,7 @@ It allows you to:
 ---
 
 ## Preview
-*(Optional — Add a screenshot of the dashboard here)*
+<img width="1919" height="914" alt="image" src="https://github.com/user-attachments/assets/99344b38-ee99-49af-a7d5-e4c1d8820c8a" />
 
 ---
 

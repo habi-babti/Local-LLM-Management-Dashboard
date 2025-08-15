@@ -7,7 +7,6 @@ from datetime import datetime
 # --- Page Configuration ---
 st.set_page_config(
     page_title="Local LLM Dashboard",
-    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -116,7 +115,7 @@ def delete_model(base_url, model_name):
 
 
 # --- Sidebar ---
-st.sidebar.title("⚙️ Configuration")
+st.sidebar.title("Configuration")
 
 if 'ollama_url' not in st.session_state:
     st.session_state.ollama_url = "http://localhost:11434"
@@ -127,12 +126,12 @@ st.session_state.ollama_url = st.sidebar.text_input(
 )
 
 # Refresh button
-if st.sidebar.button("🔄 Refresh Data"):
+if st.sidebar.button(" Refresh Data"):
     st.cache_data.clear()
     st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.title("🖥️ System Info")
+st.sidebar.title("️ System Info")
 
 try:
     # System info using psutil
@@ -150,7 +149,7 @@ except Exception as e:
     st.sidebar.warning(f"Could not retrieve system info: {e}")
 
 # --- Main Application ---
-st.title("🤖 Local LLM Management Dashboard")
+st.title(" Local LLM Management Dashboard")
 
 # Check connection and display status
 is_connected, message = check_ollama_connection(st.session_state.ollama_url)
@@ -177,7 +176,7 @@ else:
     st.info("No models found on the Ollama server.")
 
 # --- Model Management Section ---
-with st.expander("🛠️ Manage Models"):
+with st.expander("Manage Models"):
     col1, col2 = st.columns([3, 1])
     with col1:
         with st.form("pull_model_form"):

@@ -11,7 +11,7 @@ It allows you to:
 ---
 
 ## Preview
-<img width="1919" height="914" alt="image" src="https://github.com/user-attachments/assets/99344b38-ee99-49af-a7d5-e4c1d8820c8a" />
+<img width="1903" height="906" alt="image" src="https://github.com/user-attachments/assets/184a5d3e-b5ab-469b-91f2-11d60bf15c22" />
 
 ---
 

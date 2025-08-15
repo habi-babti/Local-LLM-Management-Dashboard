@@ -1,6 +1,6 @@
-#  Local LLM Management Dashboard
+# Local LLM Management Dashboard
 
-A **Streamlit-based dashboard** for managing and monitoring **Ollama** Local LLM models.  
+A Streamlit-based dashboard for managing and monitoring Ollama Local LLM models.  
 It allows you to:
 - View all installed Ollama models.
 - Check system resources (disk, RAM).
@@ -10,12 +10,12 @@ It allows you to:
 
 ---
 
-##  Preview
+## Preview
 *(Optional — Add a screenshot of the dashboard here)*
 
 ---
 
-##  Features
+## Features
 - **Ollama Server Connection Check**  
   Instantly verify if your Ollama instance is running and reachable.
 
@@ -35,7 +35,7 @@ It allows you to:
 
 ---
 
-## 🛠 Requirements
+## Requirements
 - **Python** 3.8+
 - [Streamlit](https://streamlit.io/)
 - [Pandas](https://pandas.pydata.org/)
@@ -44,9 +44,67 @@ It allows you to:
 
 ---
 
-##  Installation
+## Installation
 
 1. **Clone the repository**
    ```bash
    git clone https://github.com/your-username/local-llm-dashboard.git
    cd local-llm-dashboard
+   ```
+
+2. **Create and activate a virtual environment (recommended)**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate      # Linux/Mac
+   venv\Scripts\activate         # Windows
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install streamlit pandas requests psutil
+   ```
+
+---
+
+## Usage
+
+1. **Start Ollama**
+   In your terminal:
+   ```bash
+   ollama serve
+   ```
+
+2. **Run the Streamlit app**
+   ```bash
+   streamlit run app.py
+   ```
+   *(Replace `app.py` with your actual filename.)*
+
+3. **Access in browser**
+   Open [http://localhost:8501](http://localhost:8501) in your browser.
+
+---
+
+## Configuration
+
+* **Ollama Server URL** can be set in the sidebar.
+  Default: `http://localhost:11434`
+
+---
+
+## License
+
+MIT License. See `LICENSE` file for details.
+
+---
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you'd like to change.
+
+---
+
+## Notes
+
+* Deleting a model is irreversible — proceed with caution.
+* Large models may take significant time and disk space to pull.

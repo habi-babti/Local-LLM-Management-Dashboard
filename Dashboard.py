@@ -1,7 +1,5 @@
 import streamlit as st
 import requests
-import pandas as pd
-import psutil
 from datetime import datetime
 
 # --- Page Configuration ---
@@ -28,7 +26,6 @@ def format_bytes(size):
 def parse_iso_date(date_str):
     """Parses ISO 8601 date string and formats it nicely."""
     try:
-        # Handle the 'Z' for UTC and potential microseconds
         date_str = date_str.replace('Z', '+00:00')
         dt_object = datetime.fromisoformat(date_str)
         return dt_object.strftime("%d %b %Y, %H:%M:%S")
@@ -37,7 +34,7 @@ def parse_iso_date(date_str):
 
 
 # --- API Communication ---
-@st.cache_data(ttl=10)  # Cache for 10 seconds
+@st.cache_data(ttl=10)
 def check_ollama_connection(base_url):
     """Checks if the Ollama server is running and accessible."""
     try:
@@ -50,7 +47,7 @@ def check_ollama_connection(base_url):
         return False, f"Connection failed: {e}"
 
 
-@st.cache_data(ttl=60)  # Cache for 1 minute
+@st.cache_data(ttl=60)
 def get_ollama_models(base_url):
     """Fetches the list of installed models from the Ollama API."""
     try:
@@ -59,28 +56,26 @@ def get_ollama_models(base_url):
         models_data = response.json().get('models', [])
 
         if not models_data:
-            return pd.DataFrame()
+            return []
 
-        # Process data for display
         processed_models = []
         for model in models_data:
             processed_models.append({
-                "Name": model.get('name'),
-                "Size": format_bytes(model.get('size', 0)),
-                "Modified": parse_iso_date(model.get('modified_at', '')),
-                "Family": model.get('details', {}).get('family', 'N/A'),
-                "Parameters": model.get('details', {}).get('parameter_size', 'N/A'),
-                "Quantization": model.get('details', {}).get('quantization_level', 'N/A'),
-                "_size_bytes": model.get('size', 0),  # For sorting
-                "_modified_raw": model.get('modified_at', '')
+                "name": model.get('name'),
+                "size": model.get('size', 0),
+                "size_formatted": format_bytes(model.get('size', 0)),
+                "modified": model.get('modified_at', ''),
+                "modified_formatted": parse_iso_date(model.get('modified_at', '')),
+                "family": model.get('details', {}).get('family', 'N/A'),
+                "parameters": model.get('details', {}).get('parameter_size', 'N/A'),
+                "quantization": model.get('details', {}).get('quantization_level', 'N/A'),
             })
 
-        df = pd.DataFrame(processed_models)
-        return df.sort_values(by="Name").reset_index(drop=True)
+        return sorted(processed_models, key=lambda x: x['name'])
 
     except requests.exceptions.RequestException as e:
         st.error(f"Failed to fetch models: {e}")
-        return pd.DataFrame()
+        return []
 
 
 def pull_model(base_url, model_name):
@@ -90,11 +85,11 @@ def pull_model(base_url, model_name):
             response = requests.post(
                 f"{base_url}/api/pull",
                 json={"name": model_name, "stream": False},
-                timeout=None  # No timeout for potentially long downloads
+                timeout=None
             )
             response.raise_for_status()
         st.success(f"Successfully pulled model '{model_name}'!")
-        st.cache_data.clear()  # Clear cache to refresh model list
+        st.cache_data.clear()
     except requests.exceptions.RequestException as e:
         st.error(f"Failed to pull model: {e}")
 
@@ -109,13 +104,13 @@ def delete_model(base_url, model_name):
         )
         response.raise_for_status()
         st.success(f"Successfully deleted model '{model_name}'!")
-        st.cache_data.clear()  # Clear cache
+        st.cache_data.clear()
     except requests.exceptions.RequestException as e:
         st.error(f"Failed to delete model: {e}")
 
 
 # --- Sidebar ---
-st.sidebar.title("Configuration")
+st.sidebar.title("⚙️ Configuration")
 
 if 'ollama_url' not in st.session_state:
     st.session_state.ollama_url = "http://localhost:11434"
@@ -125,102 +120,121 @@ st.session_state.ollama_url = st.sidebar.text_input(
     value=st.session_state.ollama_url
 )
 
-# Refresh button
-if st.sidebar.button(" Refresh Data"):
+if st.sidebar.button("🔄 Refresh Data"):
     st.cache_data.clear()
     st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.title("️ System Info")
+st.sidebar.info("💡 **Tip:** Make sure Ollama is running with `ollama serve`")
 
-try:
-    # System info using psutil
-    disk = psutil.disk_usage('/')
-    ram = psutil.virtual_memory()
-
-    st.sidebar.write(f"**Disk Usage** (`/`)")
-    st.sidebar.progress(disk.percent / 100)
-    st.sidebar.write(f"{format_bytes(disk.free)} free of {format_bytes(disk.total)}")
-
-    st.sidebar.write("**RAM Usage**")
-    st.sidebar.progress(ram.percent / 100)
-    st.sidebar.write(f"{format_bytes(ram.available)} available of {format_bytes(ram.total)}")
-except Exception as e:
-    st.sidebar.warning(f"Could not retrieve system info: {e}")
 
 # --- Main Application ---
-st.title(" Local LLM Management Dashboard")
+st.title("🤖 Local LLM Management Dashboard")
 
-# Check connection and display status
+# Check connection
 is_connected, message = check_ollama_connection(st.session_state.ollama_url)
-status_color = "success" if is_connected else "error"
-st.header(f"Ollama Status: :{status_color}[{message}]", divider="rainbow")
+status_color = "green" if is_connected else "red"
+
+st.markdown(f"### Status: :{status_color}[{message}]")
+st.divider()
 
 if not is_connected:
     st.error("Could not connect to the Ollama server. Please ensure Ollama is running and the URL is correct.")
     st.info("To start Ollama, open your terminal and run `ollama serve`.")
     st.stop()
 
-# If connected, fetch and display models
-models_df = get_ollama_models(st.session_state.ollama_url)
+# Fetch models
+models = get_ollama_models(st.session_state.ollama_url)
 
 # --- Dashboard Metrics ---
-if not models_df.empty:
-    total_models = len(models_df)
-    total_size = models_df['_size_bytes'].sum()
+if models:
+    total_models = len(models)
+    total_size = sum(m['size'] for m in models)
 
     col1, col2 = st.columns(2)
-    col1.metric("Total Models", f"{total_models}")
-    col2.metric("Total Disk Space", format_bytes(total_size))
+    col1.metric("📦 Total Models", f"{total_models}")
+    col2.metric("💾 Total Disk Space", format_bytes(total_size))
 else:
     st.info("No models found on the Ollama server.")
 
-# --- Model Management Section ---
-with st.expander("Manage Models"):
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        with st.form("pull_model_form"):
-            new_model_name = st.text_input("Model Name to Pull", placeholder="e.g., llama3:8b, mistral, etc.")
-            submitted_pull = st.form_submit_button("Pull Model")
-            if submitted_pull and new_model_name:
-                pull_model(st.session_state.ollama_url, new_model_name)
-                st.rerun()
+st.divider()
 
-    with col2:
-        with st.form("delete_model_form"):
-            model_to_delete = st.selectbox("Select Model to Delete",
-                                           options=models_df['Name'].tolist() if not models_df.empty else [])
-            submitted_delete = st.form_submit_button("Delete Model", type="primary")
-            if submitted_delete and model_to_delete:
-                st.warning(f"Are you sure you want to delete **{model_to_delete}**? This cannot be undone.", icon="⚠️")
-                if st.button("Yes, permanently delete"):
-                    delete_model(st.session_state.ollama_url, model_to_delete)
-                    st.rerun()
+# --- Model Management Section ---
+st.subheader("🔧 Manage Models")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("**Pull New Model**")
+    with st.form("pull_model_form"):
+        new_model_name = st.text_input(
+            "Model Name",
+            placeholder="e.g., llama3:8b, mistral, gemma:2b"
+        )
+        submitted_pull = st.form_submit_button("⬇️ Pull Model", use_container_width=True)
+        if submitted_pull and new_model_name:
+            pull_model(st.session_state.ollama_url, new_model_name)
+            st.rerun()
+
+with col2:
+    st.markdown("**Delete Model**")
+    if models:
+        model_names = [m['name'] for m in models]
+        model_to_delete = st.selectbox(
+            "Select Model",
+            options=model_names,
+            label_visibility="collapsed"
+        )
+        if st.button("🗑️ Delete Model", type="primary", use_container_width=True):
+            if st.session_state.get('confirm_delete') == model_to_delete:
+                delete_model(st.session_state.ollama_url, model_to_delete)
+                st.session_state.confirm_delete = None
+                st.rerun()
+            else:
+                st.session_state.confirm_delete = model_to_delete
+                st.warning(f"⚠️ Click again to confirm deletion of **{model_to_delete}**")
+    else:
+        st.info("No models to delete")
+
+st.divider()
 
 # --- Models Display ---
-st.header("Installed Models", divider="gray")
+st.subheader("📚 Installed Models")
 
-if not models_df.empty:
-    view_mode = st.radio("Select View", ["Table View", "Card View"], horizontal=True, label_visibility="collapsed")
+if models:
+    view_mode = st.radio(
+        "View Mode",
+        ["Table View", "Card View"],
+        horizontal=True
+    )
 
     if view_mode == "Table View":
-        st.dataframe(
-            models_df[['Name', 'Size', 'Family', 'Parameters', 'Quantization', 'Modified']],
-            use_container_width=True,
-            hide_index=True,
-        )
+        # Create table manually
+        st.markdown("| Name | Size | Family | Parameters | Quantization | Modified |")
+        st.markdown("|------|------|--------|------------|--------------|----------|")
+        for model in models:
+            st.markdown(
+                f"| {model['name']} | {model['size_formatted']} | "
+                f"{model['family']} | {model['parameters']} | "
+                f"{model['quantization']} | {model['modified_formatted']} |"
+            )
 
-    elif view_mode == "Card View":
+    else:  # Card View
         cols = st.columns(3)
-        col_idx = 0
-        for index, row in models_df.iterrows():
-            with cols[col_idx]:
+        for idx, model in enumerate(models):
+            with cols[idx % 3]:
                 with st.container(border=True):
-                    st.subheader(row['Name'])
-                    st.text(f"Size: {row['Size']}")
-                    st.text(f"Family: {row['Family']}")
-                    st.caption(f"Modified: {row['Modified']}")
-                    with st.expander("More Details"):
-                        st.write(f"**Parameters:** {row['Parameters']}")
-                        st.write(f"**Quantization:** {row['Quantization']}")
-            col_idx = (col_idx + 1) % 3
+                    st.markdown(f"### {model['name']}")
+                    st.markdown(f"**Size:** {model['size_formatted']}")
+                    st.markdown(f"**Family:** {model['family']}")
+                    st.caption(f"Modified: {model['modified_formatted']}")
+                    
+                    with st.expander("📋 Details"):
+                        st.write(f"**Parameters:** {model['parameters']}")
+                        st.write(f"**Quantization:** {model['quantization']}")
+else:
+    st.info("No models installed. Pull a model to get started!")
+
+# Footer
+st.divider()
+st.caption("Built with Streamlit and Requests • Managing Ollama Models")

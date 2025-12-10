@@ -12,9 +12,6 @@ It allows you to:
 
 ## Preview
 <img width="1903" height="906" alt="image" src="https://github.com/user-attachments/assets/184a5d3e-b5ab-469b-91f2-11d60bf15c22" />
-![wmremove-transformed]()
-<img width="1903" height="906" alt="image" src="https://github.com/user-attachments/assets/9c3b982a-cf92-4c43-8ed8-41b301148106" />
-
 ---
 
 ## Features
